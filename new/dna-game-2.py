@@ -286,16 +286,22 @@ def run_noise(circuit, obs):
 # In[9]:
 
 
-def execute(circuit: cirq.Circuit, noise_level: float = 0.002, p0: float = 0.05) -> MeasurementResult:
+def execute(circuit: cirq.Circuit, noise_level: float = 0.01, p0: float = 0.05) -> MeasurementResult:
     '''
     run circuit with depolarization/noise, and measure results
     noise_level: strength of depolarization noise
+    p0: used to suppress all noise channels when set to 0 (pure baseline)
     '''
+    bit_flip_p   = 0.05 if p0 > 0 else 0
+    phase_flip_p = 0.05 if p0 > 0 else 0
+    amp_damp_p   = 0.05 if p0 > 0 else 0
 
     measurements = circuit[-1]
     circuit = circuit[:-1]
     circuit = circuit.with_noise(cirq.depolarize(noise_level))
-    circuit.append(cirq.bit_flip(p0).on_each(circuit.all_qubits()))
+    circuit.append(cirq.bit_flip(bit_flip_p).on_each(circuit.all_qubits()))
+    circuit.append(cirq.phase_flip(phase_flip_p).on_each(circuit.all_qubits()))
+    circuit.append(cirq.amplitude_damp(amp_damp_p).on_each(circuit.all_qubits()))
     circuit.append(measurements)
 
     result = SIMULATOR.run(circuit, repetitions=1000)
@@ -319,12 +325,9 @@ def mitigate(circuit: cirq.Circuit, chromosome, executor):
 
 # In[11]:
 def compute_mitigation_ratio(pure, noise, mitigation):
-    # mitigation ratio
-    try:
-        ratio = abs((mitigation - pure) / (noise - pure))
-    except ZeroDivisionError:
-        ratio = math.inf
-    return ratio
+    if noise == pure:
+        return math.inf
+    return abs((mitigation - pure) / (noise - pure))
 
 def ratio_to_fitness(ratio):
     return expit(-np.log(ratio))
@@ -475,41 +478,18 @@ def initialize_population(population_size, n_qubits, obs):
 # In[22]:
 
 
-def get_fitness(pop, circuit, obs):
-    #fitnesses = Parallel(n_jobs=16, backend='multiprocessing')(
-    #    delayed(evaluate_fitness)(indiv, circuit, obs) for indiv in tqdm(pop)
-    #)
+def get_fitness(pop, circuit, obs, pool):
+    def get_res(f, indiv):
+        try:
+            return f.result()
+        except Exception:
+            return evaluate_fitness(indiv, circuit, obs)
 
+    futures = [pool.submit(evaluate_fitness, indiv, circuit, obs) for indiv in pop]
+    fitnesses = [get_res(f, indiv) for f, indiv in tqdm(zip(futures, pop), total=len(pop))]
 
-    #fitnesses = [
-    #    evaluate_fitness(indiv, circuit, obs) for indiv in tqdm(pop)
-    #]
-
-    ctx = get_context('spawn')
-    with ProcessPoolExecutor(mp_context=ctx, max_workers=16) as executor:
-        # fitness testing. Multiprocessing speeds this up
-        futures = [executor.submit(evaluate_fitness, indiv, circuit, obs) for indiv in pop]
-        #fbar = trange(len(futures), leave=False)
-        def get_res(f, indiv, circuit):
-            #fbar.update()
-            # execute the exceptions synchronously if unpickleable:
-            # AttributeError: Can't pickle local object 'PolyFactory.extrapolate.<locals>.zne_curve'
-            try:
-                result = f.result()
-            except Exception as e:  # assume that errors are related to multiprocessing
-                # print(e, file=sys.stderr)
-                result = evaluate_fitness(indiv, circuit, obs)
-            return result
-
-        fitnesses = [get_res(future, indiv, circuit) for future, indiv in tqdm(zip(futures, pop), total = len(pop))]
-
-    # sort by fitnesses
-    pop_and_fit = sorted(
-        zip(pop, fitnesses),
-        key = lambda v: -v[1],
-    )
-    # returns pop and fit
-    return [indiv[0] for indiv in pop_and_fit], [indiv[1] for indiv in pop_and_fit]
+    pop_and_fit = sorted(zip(pop, fitnesses), key=lambda v: -v[1])
+    return [p[0] for p in pop_and_fit], [p[1] for p in pop_and_fit]
 
 
 # In[23]:
@@ -534,24 +514,21 @@ def repop(pop):
 
 def genetic_algorithm_2(pop_size, n_qubits, obs, circuit, epochs):
     '''
-    Optimize a population of 'pop size' on 'circuit' for 'generation_count' generations.
+    Optimize a population of 'pop size' on 'circuit' for 'epochs' generations.
     '''
-    pop = initialize_population(pop_size, n_qubits, obs)
-    pop, this_fits = get_fitness(pop, circuit, obs)
-    pops = [pop]
-    fits = [this_fits]
-    for _ in trange(generation_count,
-            desc = 'genetic algorithm',
-            unit = 'generation',
-        ):
-        # mutation
-        pop = [mutate(i) for i in pop]
-        # crossover (single time)
-        pop = crossover(pop, times=1)
-        pop = repop(pop)
-        pop, this_fits = get_fitness(pop, circuit, obs)
-        pops.append(pop)
-        fits.append(this_fits)
+    ctx = get_context('spawn')
+    with ProcessPoolExecutor(mp_context=ctx, max_workers=16) as pool:
+        pop = initialize_population(pop_size, n_qubits, obs)
+        pop, this_fits = get_fitness(pop, circuit, obs, pool)
+        pops = [pop]
+        fits = [this_fits]
+        for _ in trange(epochs, desc='genetic algorithm', unit='generation'):
+            pop = [mutate(i) for i in pop]
+            pop = crossover(pop, times=1)
+            pop = repop(pop)
+            pop, this_fits = get_fitness(pop, circuit, obs, pool)
+            pops.append(pop)
+            fits.append(this_fits)
     return pops, fits
 
 
@@ -559,6 +536,11 @@ def genetic_algorithm_2(pop_size, n_qubits, obs, circuit, epochs):
 
 
 def generate_circuits(n_qubits, seed):
+    qubits = cirq.LineQubit.range(n_qubits)
+    qft_circuit = cirq.Circuit(
+        cirq.QuantumFourierTransformGate(n_qubits).on(*qubits),
+        cirq.measure(*qubits),
+    )
     return [
         generate_ghz_circuit(n_qubits),
         generate_w_circuit(n_qubits),
@@ -569,12 +551,7 @@ def generate_circuits(n_qubits, seed):
             num_t_gates=n_qubits,
             seed=seed,
         ),
-        # what do mirror circuits return?
-        # ValueError: probabilities are not non-negative
-        # generate_mirror_qv_circuit(
-        #     num_qubits=n_qubits,
-        #     depth=n_qubits,
-        # ),
+        qft_circuit,
     ]
 
 def benchmark(fittest_chromosome, circuit, n_qubits, obs):
@@ -637,80 +614,81 @@ def benchmark(fittest_chromosome, circuit, n_qubits, obs):
 
 
 def experiment(seed, n_qubits, circuit, circuit_name):
-    np.random.seed(seed) # global random seed is probably not respected, also may have issues in multiprocessing
-    # circuit = circuits[0]
-    # circuit_name = circuit_names[0]
+    np.random.seed(seed)
     pops, fits = genetic_algorithm_2(pop_size, n_qubits, obs, circuit, generation_count)
 
-    df = pd.DataFrame()
-    df['pops'] = pops
-    df['fits'] = fits
-    df.index = list(range(generation_count + 1))
-    df['n_qubits'] = n_qubits
-    df['obs'] = obs
-    df['seed'] = seed
-    df['circuit_name'] = circuit_name
-    results_dir = f'results/{now}/n_qubits={n_qubits}_circuit={circuit_name}_seed={seed}/'
-    os.makedirs(results_dir)
-    df.to_csv(os.path.join(results_dir, 'pops.csv'))
-    # take fittest chromosome of last generation
+    # build results rows: one per (epoch × individual)
+    # ratio = exp(-logit(fitness)) is the inverse of ratio_to_fitness
+    from scipy.special import logit
+    results_rows = [
+        {
+            'method': 'GA',
+            'sequence': str(chrom),
+            'circuit': circuit_name,
+            'n_qubits': n_qubits,
+            'seed': seed,
+            'epoch': epoch,
+            'fitness': fitness,
+            'mitigation_ratio': float(np.exp(-logit(fitness))) if 0 < fitness < 1 else math.inf,
+            'chromosome_str': str(chrom),
+        }
+        for epoch, (pop, epoch_fits) in enumerate(zip(pops, fits))
+        for chrom, fitness in zip(pop, epoch_fits)
+    ]
+
+    # build benchmark rows
     fittest_chromosome = pops[-1][np.argmax(fits[-1])]
-    res = benchmark(fittest_chromosome, circuit, n_qubits, obs)
-    df2 = pd.DataFrame(res, index=['fitness', 'ratio'])
-    print(df2)
-    df2 = df2.T.reset_index().rename(columns={'index': 'method'})
-    df2['n_qubits'] = n_qubits
-    df2['obs'] = obs
-    df2['seed'] = seed
-    df2['circuit_name'] = circuit_name
-    df2.to_csv(os.path.join(results_dir, 'benchmarks.csv'))
-    with open(os.path.join(results_dir, 'best-chromosome.txt'), 'w') as f:
-        f.write(str(fittest_chromosome))
-        f.write('\n')
-    return df, df2
+    fitnesses, ratios = benchmark(fittest_chromosome, circuit, n_qubits, obs)
+    benchmark_rows = [
+        {
+            'method': method,
+            'sequence': method,
+            'circuit': circuit_name,
+            'n_qubits': n_qubits,
+            'seed': seed,
+            'fitness': fitnesses[method],
+            'mitigation_ratio': ratios[method],
+        }
+        for method in fitnesses
+    ]
+
+    return results_rows, benchmark_rows
 
 # In[27]:
 
 
 if __name__ == '__main__':
-    # warnings.filterwarnings("ignore", message=".*ComplexWarning: Casting complex values to real discards the imaginary part")
-    # warnings.filterwarnings("ignore", message=".*UserWarning: The input circuit is very short. This may reduce the accuracy of noise scaling")
-    # warnings.filterwarnings('once') # , ComplexWarning)
-    # warnings.filterwarnings('once', UserWarning)
-
-    now = time.asctime()
-    # serial_code = now # get_serial_code()
+    now = time.strftime('%Y%m%dT%H%M%S')
     pop_size = 4  # TODO: set to 40 when ready
     generation_count = 2  # TODO: set to 10 when ready
     n_qubits = 6
     n_seeds = 2  # TODO: set to 3 when ready
-    all_pops = []
+
+    all_results = []
     all_benchmarks = []
-    for n_q in range(5, n_qubits+1):
+
+    for n_q in range(5, n_qubits + 1):
         print(n_q)
-        # np.random.seed(0) 
-        circuits = generate_circuits(n_q, 0) # use same random circuits
+        circuits = generate_circuits(n_q, 0)
         circuit_names = [
             'GHZ',
             'W-state',
             'Random Clifford T',
+            'QFT',
         ]
-        # obtain drawings with:
-        # from cirq.contrib.svg import SVGCircuit
-
         obs = Observable(PauliString("Z" * n_q))
         for seed in range(n_seeds):
             print(seed)
-            for i in range(len(circuits)):
-                circuit = circuits[i]
-                circuit_name = circuit_names[i]
-                print(circuit)
+            for circuit, circuit_name in zip(circuits, circuit_names):
                 print(circuit_name)
-                pops, benchmarks = experiment(seed, n_q, circuit, circuit_name)
-                all_pops.append(pops)
-                all_benchmarks.append(benchmarks)
-    pd.concat(all_pops).reset_index().to_csv(f'results/{now}/all_pops.csv')
-    pd.concat(all_benchmarks).reset_index().to_csv(f'results/{now}/all_benchmarks.csv')
+                results_rows, benchmark_rows = experiment(seed, n_q, circuit, circuit_name)
+                all_results.extend(results_rows)
+                all_benchmarks.extend(benchmark_rows)
+
+    out_dir = Path(f'results/{now}')
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(all_results).to_csv(out_dir / 'results.csv', index=False)
+    pd.DataFrame(all_benchmarks).to_csv(out_dir / 'benchmarks.csv', index=False)
     exit()
 
 """
