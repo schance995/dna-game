@@ -659,10 +659,10 @@ def experiment(seed, n_qubits, circuit, circuit_name):
 
 if __name__ == '__main__':
     now = time.strftime('%Y%m%dT%H%M%S')
-    pop_size = 4  # TODO: set to 40 when ready
-    generation_count = 2  # TODO: set to 10 when ready
+    pop_size = 40
+    generation_count = 10
     n_qubits = 6
-    n_seeds = 2  # TODO: set to 3 when ready
+    n_seeds = 3
 
     all_results = []
     all_benchmarks = []
