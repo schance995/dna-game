@@ -77,7 +77,7 @@ from tqdm import tqdm, trange
 import pandas as pd
 import numpy as np
 from numpy import random as random
-from scipy.special import expit
+from scipy.special import expit, logit
 from matplotlib import pyplot as plt
 
 # quantum
@@ -274,13 +274,19 @@ class DDDGene(BaseGene):
 # In[8]:
 
 
+def _strip_measurements(circuit: cirq.Circuit) -> cirq.Circuit:
+    ''' Remove terminal measurement moment if present, so mitiq can add its own. '''
+    if circuit and any(cirq.is_measurement(op) for op in circuit[-1].operations):
+        return circuit[:-1]
+    return circuit
+
 def run_pure(circuit, obs):
     ''' pure-state execution '''
-    return raw.execute(circuit, partial(execute, noise_level=0, p0=0), obs)
+    return raw.execute(_strip_measurements(circuit), partial(execute, noise_level=0, p0=0), obs)
 
 def run_noise(circuit, obs):
     ''' simulated noisy qpu '''
-    return raw.execute(circuit, execute, obs)
+    return raw.execute(_strip_measurements(circuit), execute, obs)
 
 
 # In[9]:
@@ -320,7 +326,7 @@ def mitigate(circuit: cirq.Circuit, chromosome, executor):
 
     for gene in chromosome:
         executor = gene.executor(executor)
-    return executor(circuit)
+    return executor(_strip_measurements(circuit))
 
 
 # In[11]:
@@ -485,8 +491,11 @@ def get_fitness(pop, circuit, obs, pool):
         except Exception:
             return evaluate_fitness(indiv, circuit, obs)
 
-    futures = [pool.submit(evaluate_fitness, indiv, circuit, obs) for indiv in pop]
-    fitnesses = [get_res(f, indiv) for f, indiv in tqdm(zip(futures, pop), total=len(pop))]
+    try:
+        futures = [pool.submit(evaluate_fitness, indiv, circuit, obs) for indiv in pop]
+        fitnesses = [get_res(f, indiv) for f, indiv in tqdm(zip(futures, pop), total=len(pop))]
+    except Exception:
+        fitnesses = [evaluate_fitness(indiv, circuit, obs) for indiv in tqdm(pop)]
 
     pop_and_fit = sorted(zip(pop, fitnesses), key=lambda v: -v[1])
     return [p[0] for p in pop_and_fit], [p[1] for p in pop_and_fit]
@@ -565,16 +574,20 @@ def benchmark(fittest_chromosome, circuit, n_qubits, obs):
     icm = rem.generate_inverse_confusion_matrix(n_qubits, 0.05, 0.05) # arbitrary config
     rem_executor = rem.mitigate_executor(execute, inverse_confusion_matrix=icm)
 
-    rem_result = obs.expectation(circuit, rem_executor)
+    stripped = _strip_measurements(circuit)
+    rem_result = obs.expectation(stripped, rem_executor)
     #print("Mitigated value obtained with REM:", "{:.5f}".format(rem_result.real))
 
-    zne_result = zne.execute_with_zne(circuit, execute, obs) # default params
+    zne_result = zne.execute_with_zne(stripped, execute, obs) # default params
     #print("Mitigated value obtained with ZNE:", "{:.5f}".format(zne_result.real))
 
-    ddd_result = ddd.execute_with_ddd(circuit, execute, obs, rule = ddd.rules.xx) # default params
+    ddd_result = ddd.execute_with_ddd(stripped, execute, obs, rule = ddd.rules.xx) # default params
     #print("Mitigated value obtained with DDD:", "{:.5f}".format(ddd_result.real))
 
-    optim_result = mitigate(circuit, fittest_chromosome, execute)
+    try:
+        optim_result = mitigate(circuit, fittest_chromosome, execute)
+    except Exception:
+        optim_result = noisy_measurement
     #print("Optim mitigated value:", "{:.5f}".format(optim_result.real))
 
     # compute mitigation ratios of each
@@ -613,44 +626,196 @@ def benchmark(fittest_chromosome, circuit, n_qubits, obs):
 
 
 
-def experiment(seed, n_qubits, circuit, circuit_name):
-    np.random.seed(seed)
-    pops, fits = genetic_algorithm_2(pop_size, n_qubits, obs, circuit, generation_count)
+def grid_search(n_qubits, obs, circuit, sequence):
+    """
+    Enumerate all discrete parameter combinations for the given sequence type.
+    sequence: 'REM+DDD' | 'REM+ZNE'
+    Budget: same as GA = 400 evaluations.
+    Returns (best_chromosome, results_rows).
+    """
+    from itertools import product as iproduct
 
-    # build results rows: one per (epoch × individual)
-    # ratio = exp(-logit(fitness)) is the inverse of ratio_to_fitness
-    from scipy.special import logit
+    rem_p_vals = [0.01, 0.05, 0.1, 0.2]
+
+    if sequence == 'REM+DDD':
+        configs = [
+            [REMGene(p0=p0, p1=p1, n_qubits=n_qubits), DDDGene(rule=rule, obs=obs)]
+            for p0, p1, rule in iproduct(rem_p_vals, rem_p_vals, DDDGene.rules)
+        ]
+    else:  # REM+ZNE
+        configs = [
+            [REMGene(p0=p0, p1=p1, n_qubits=n_qubits),
+             ZNEGene(factory=factory, scale_noise=scale_noise, num_to_avg=1, obs=obs)]
+            for p0, p1, factory, scale_noise in iproduct(
+                rem_p_vals, rem_p_vals, ZNEGene.factories, ZNEGene.scale_noises
+            )
+        ]
+
+    ctx = get_context('spawn')
+    with ProcessPoolExecutor(mp_context=ctx, max_workers=16) as pool:
+        futures = [pool.submit(evaluate_fitness, chrom, circuit, obs) for chrom in configs]
+        fitnesses = []
+        for f, chrom in tqdm(zip(futures, configs), total=len(configs)):
+            try:
+                fitnesses.append(f.result())
+            except Exception:
+                fitnesses.append(evaluate_fitness(chrom, circuit, obs))
+
     results_rows = [
         {
-            'method': 'GA',
+            'method': 'grid_search',
             'sequence': str(chrom),
-            'circuit': circuit_name,
+            'circuit': None,   # filled in by caller
             'n_qubits': n_qubits,
-            'seed': seed,
-            'epoch': epoch,
+            'seed': None,
+            'epoch': 0,
             'fitness': fitness,
             'mitigation_ratio': float(np.exp(-logit(fitness))) if 0 < fitness < 1 else math.inf,
             'chromosome_str': str(chrom),
         }
-        for epoch, (pop, epoch_fits) in enumerate(zip(pops, fits))
-        for chrom, fitness in zip(pop, epoch_fits)
+        for chrom, fitness in zip(configs, fitnesses)
     ]
 
-    # build benchmark rows
-    fittest_chromosome = pops[-1][np.argmax(fits[-1])]
-    fitnesses, ratios = benchmark(fittest_chromosome, circuit, n_qubits, obs)
-    benchmark_rows = [
+    best_idx = int(np.argmax(fitnesses))
+    return configs[best_idx], results_rows
+
+
+def random_search(n_qubits, obs, circuit, sequence, n_samples=400):
+    """
+    Sample n_samples configs uniformly at random from the continuous parameter space.
+    sequence: 'REM+DDD' | 'REM+ZNE'
+    Returns (best_chromosome, results_rows).
+    """
+    if sequence == 'REM+DDD':
+        configs = [
+            [
+                REMGene(p0=float(random.uniform(0, 1)), p1=float(random.uniform(0, 1)), n_qubits=n_qubits),
+                DDDGene(rule=random.choice(DDDGene.rules), obs=obs),
+            ]
+            for _ in range(n_samples)
+        ]
+    else:  # REM+ZNE
+        configs = [
+            [
+                REMGene(p0=float(random.uniform(0, 1)), p1=float(random.uniform(0, 1)), n_qubits=n_qubits),
+                ZNEGene(
+                    factory=ZNEGene.generate_factory(),
+                    scale_noise=random.choice(ZNEGene.scale_noises),
+                    num_to_avg=1,
+                    obs=obs,
+                ),
+            ]
+            for _ in range(n_samples)
+        ]
+
+    ctx = get_context('spawn')
+    with ProcessPoolExecutor(mp_context=ctx, max_workers=16) as pool:
+        futures = [pool.submit(evaluate_fitness, chrom, circuit, obs) for chrom in configs]
+        fitnesses = []
+        for f, chrom in tqdm(zip(futures, configs), total=len(configs)):
+            try:
+                fitnesses.append(f.result())
+            except Exception:
+                fitnesses.append(evaluate_fitness(chrom, circuit, obs))
+
+    results_rows = [
         {
-            'method': method,
-            'sequence': method,
+            'method': 'random_search',
+            'sequence': str(chrom),
+            'circuit': None,
+            'n_qubits': n_qubits,
+            'seed': None,
+            'epoch': 0,
+            'fitness': fitness,
+            'mitigation_ratio': float(np.exp(-logit(fitness))) if 0 < fitness < 1 else math.inf,
+            'chromosome_str': str(chrom),
+        }
+        for chrom, fitness in zip(configs, fitnesses)
+    ]
+
+    best_idx = int(np.argmax(fitnesses))
+    return configs[best_idx], results_rows
+
+
+def experiment(seed, n_qubits, circuit, circuit_name, method='GA'):
+    np.random.seed(seed)
+
+    results_rows = []
+
+    if method == 'GA':
+        pops, fits = genetic_algorithm_2(pop_size, n_qubits, obs, circuit, generation_count)
+        results_rows = [
+            {
+                'method': 'GA',
+                'sequence': str(chrom),
+                'circuit': circuit_name,
+                'n_qubits': n_qubits,
+                'seed': seed,
+                'epoch': epoch,
+                'fitness': fitness,
+                'mitigation_ratio': float(np.exp(-logit(fitness))) if 0 < fitness < 1 else math.inf,
+                'chromosome_str': str(chrom),
+            }
+            for epoch, (pop, epoch_fits) in enumerate(zip(pops, fits))
+            for chrom, fitness in zip(pop, epoch_fits)
+        ]
+        fittest_chromosome = pops[-1][np.argmax(fits[-1])]
+
+    elif method == 'grid_search':
+        all_rows = []
+        best_chrom, best_fitness = None, -math.inf
+        for sequence in ['REM+DDD', 'REM+ZNE']:
+            chrom, rows = grid_search(n_qubits, obs, circuit, sequence)
+            for row in rows:
+                row['circuit'] = circuit_name
+                row['seed'] = seed
+            all_rows.extend(rows)
+            seq_best_fitness = max(r['fitness'] for r in rows)
+            if seq_best_fitness > best_fitness:
+                best_fitness = seq_best_fitness
+                best_chrom = chrom
+        results_rows = all_rows
+        fittest_chromosome = best_chrom
+
+    elif method == 'random_search':
+        all_rows = []
+        best_chrom, best_fitness = None, -math.inf
+        for sequence in ['REM+DDD', 'REM+ZNE']:
+            chrom, rows = random_search(n_qubits, obs, circuit, sequence)
+            for row in rows:
+                row['circuit'] = circuit_name
+                row['seed'] = seed
+            all_rows.extend(rows)
+            seq_best_fitness = max(r['fitness'] for r in rows)
+            if seq_best_fitness > best_fitness:
+                best_fitness = seq_best_fitness
+                best_chrom = chrom
+        results_rows = all_rows
+        fittest_chromosome = best_chrom
+
+    # build benchmark rows (defaults + optimized)
+    fitnesses, ratios = benchmark(fittest_chromosome, circuit, n_qubits, obs)
+    # defaults rows use method='defaults'; DNA row uses the optimizer method name
+    benchmark_rows = []
+    for bm_method in ['REM', 'ZNE', 'DDD']:
+        benchmark_rows.append({
+            'method': 'defaults',
+            'sequence': bm_method,
             'circuit': circuit_name,
             'n_qubits': n_qubits,
             'seed': seed,
-            'fitness': fitnesses[method],
-            'mitigation_ratio': ratios[method],
-        }
-        for method in fitnesses
-    ]
+            'fitness': fitnesses[bm_method],
+            'mitigation_ratio': ratios[bm_method],
+        })
+    benchmark_rows.append({
+        'method': method,
+        'sequence': 'DNA',
+        'circuit': circuit_name,
+        'n_qubits': n_qubits,
+        'seed': seed,
+        'fitness': fitnesses['DNA'],
+        'mitigation_ratio': ratios['DNA'],
+    })
 
     return results_rows, benchmark_rows
 
@@ -661,11 +826,13 @@ if __name__ == '__main__':
     now = time.strftime('%Y%m%dT%H%M%S')
     pop_size = 40
     generation_count = 10
-    n_qubits = 6
+    n_qubits = 7
     n_seeds = 3
 
     all_results = []
     all_benchmarks = []
+
+    methods = ['GA', 'grid_search', 'random_search']
 
     for n_q in range(5, n_qubits + 1):
         print(n_q)
@@ -681,9 +848,11 @@ if __name__ == '__main__':
             print(seed)
             for circuit, circuit_name in zip(circuits, circuit_names):
                 print(circuit_name)
-                results_rows, benchmark_rows = experiment(seed, n_q, circuit, circuit_name)
-                all_results.extend(results_rows)
-                all_benchmarks.extend(benchmark_rows)
+                for method in methods:
+                    print(method)
+                    results_rows, benchmark_rows = experiment(seed, n_q, circuit, circuit_name, method=method)
+                    all_results.extend(results_rows)
+                    all_benchmarks.extend(benchmark_rows)
 
     out_dir = Path(f'results/{now}')
     out_dir.mkdir(parents=True, exist_ok=True)
