@@ -1,0 +1,15 @@
+[project]
+name = "dna-game"
+version = "2.0"
+description = "search quantum error mitigation strategies"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "cirq>=1.6.1",
+    "matplotlib>=3.10.9",
+    "mitiq>=1.0.0",
+    "pandas>=2.3.3",
+    "pathlib>=1.0.1",
+    "scipy>=1.17.1",
+    "tqdm>=4.67.3",
+]
