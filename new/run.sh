@@ -1,1 +1,0 @@
-uv run jupyter-notebook
