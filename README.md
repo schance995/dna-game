@@ -12,19 +12,14 @@ DNA Game was developed using the following technologies:
 - Python <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/1200px-Python-logo-notext.svg.png" alt="python logo" width="30px"/>
 
 ## Setup
-Follow [this tutorial](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/), then install the necessary dependencies with `pip install -r requirements.txt`.
+Install the dependencies as described in [`pyproject.toml`](pyproject.toml).
 
-Then run the genetic algorithm using:
-```
-python genetic_algo.py
-```
-
-Logs are saved to `output.txt` and plots to `plots`. To reset a run, delete `config/count.txt`.
+Within each run, results are saved to a timestamped folder.
 
 ## Notes
 
-Our notes are available in `QEM_PARAMS.md` and in `notebooks`.
+Our notes are available in [`QEM_PARAMS.md`](QEM_PARAMS.md) and in [`notebooks/`](notebooks/).
 
 ## License
 
-BSD 3-Clause. See `LICENSE` for the full text.
+BSD 3-Clause. See [`LICENSE`](LICENSE) for the full text.
