@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "cirq>=1.6.1",
+    "joblib>=1.5.3",
     "matplotlib>=3.10.9",
     "mitiq>=1.0.0",
     "pandas>=2.3.3",
