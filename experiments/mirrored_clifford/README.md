@@ -1,5 +1,8 @@
 # Mirrored Clifford+T experiments and analysis (Marco)
 
+- **Data for your own analysis:** [`data/`](data/). Tidy CSVs with a data dictionary: one row per seed × multiplier × method, plus GA curves and re-run data.
+- **Results/Discussion first draft:** [`RESULTS_DRAFT.md`](RESULTS_DRAFT.md), with paper figures in [`paper_figures/`](paper_figures/) (PDF + PNG, regenerated from `data/` by `make_results_figures.py`).
+
 Self-contained: `dna-game-2.py` here is the exact version that produced these results (pre-`src/gene` refactor, plus best-ever chromosome tracking and `DNA_MAX_WORKERS`). Run everything from this folder, e.g. `python analysis_20260923.py` (pandas/scipy/sklearn only, ~6 s; output in `results/20260923_analysis/run_log.txt`). Long-form notes: [`WRITEUP.md`](WRITEUP.md).
 
 ## Setup (answers "is the mirror literally U†? what do multipliers scale?")
@@ -87,6 +90,6 @@ The 0513 budget curve compared GA's in-search best against grid/random's one-sho
 ![fair budget curve](results/20260923_analysis/figA1_budget_curve_fair.png)
 ![box by circuit](results/20260923_analysis/figA2_box_by_circuit.png)
 
-## Cost of going to 20 seeds
+## Sample size
 
-Extra compute for seeds 10–19 (GA + grid, from logged run times): ×0.5–×4 ≈ 130 h back-to-back; ×6/×8 ≈ 530 h (the first 10 seeds took ~6.5 weeks of real time). Recommendation: extend ×0.5–×4 only. Given test-retest ICC ≈ 0, extra seeds at ×6/×8 would measure the noise more precisely rather than change the conclusion.
+The results stay at N = 10 seeds per multiplier; no new runs are planned. Extending to 20 would cost ≈ 130 h of compute at ×0.5–×4 and ≈ 530 h at ×6/×8. Given test-retest ICC ≈ 0, extra seeds would measure the noise more precisely rather than change the conclusion.
