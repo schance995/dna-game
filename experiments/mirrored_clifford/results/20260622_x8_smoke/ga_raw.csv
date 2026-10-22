@@ -1,0 +1,2 @@
+seed,difficulty,gates_per_type,method,t_s,gens_to_converge,best_fitness,final_best_fitness,ideal,noisy,mitigated_peak,mitigated_final,ratio_raw,ratio_raw_final,best_pipeline,final_pipeline
+0,8.0,392,GA,35920.57,14,0.93658,0.58006,1.0,-0.002,-5.87259,0.27284,6.85888,0.72571,"[rem(0.07, 0.05), zne(RichardsonFactory([1.27686552 2.28704747 2.4004186  6.04199625 9.99364675]), fold_gates_at_random)]","[rem(0.06, 0.03), zne(PolyFactory([1.27680497 3.60373848 4.78639766 8.66383731], 2), fold_all)]"

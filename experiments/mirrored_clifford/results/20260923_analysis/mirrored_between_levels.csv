@@ -1,0 +1,6 @@
+test,stat,p
+Mann-Whitney ×4 vs ×6,78.0,0.03763531378731424
+Mann-Whitney ×6 vs ×8,22.0,0.06619257972219345
+Mann-Whitney ×6 vs all other levels,100.0,0.0035077244951700445
+Kruskal-Wallis across 6 levels,12.215178907721281,0.031955375618036554
+"Spearman(level, log GA/grid)",-0.3000516347268435,0.020948681927756185

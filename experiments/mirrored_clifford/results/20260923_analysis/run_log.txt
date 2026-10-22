@@ -1,0 +1,268 @@
+/Users/marco/Desktop/cs/quantum/dna-game-pr/experiments/mirrored_clifford/analysis_20260923.py:425: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  feat[feat.technique == "ZNE"].groupby("method").apply(lambda g: pd.Series(dict(
+May broken conditions excluded: []
+
+=== May: GA vs others on re-evaluated fitness ===
+                                 circuit          comparison  n  GA_mean  other_mean  GA_wins  wilcoxon_p
+                                    GHZ   GA vs grid_search  9    0.616       0.581        5       0.820
+                                    GHZ GA vs random_search  9    0.616       0.741        2       0.129
+                                    GHZ  GA vs best_default  9    0.616       0.564        7       0.301
+                                W-state   GA vs grid_search  9    0.847       0.986        0       0.008
+                                W-state GA vs random_search  9    0.847       1.000        0       0.008
+                                W-state  GA vs best_default  9    0.847       0.665        8       0.012
+                      Random Clifford T   GA vs grid_search  9    0.464       0.294        7       0.164
+                      Random Clifford T GA vs random_search  9    0.464       0.199        7       0.039
+                      Random Clifford T  GA vs best_default  9    0.464       0.501        4       0.910
+                                    QFT   GA vs grid_search  9    0.534       0.293        6       0.203
+                                    QFT GA vs random_search  9    0.534       0.196        8       0.008
+                                    QFT  GA vs best_default  9    0.534       0.465        6       0.570
+                         hard (RCT+QFT)   GA vs grid_search 18    0.499       0.294       13       0.054
+                         hard (RCT+QFT) GA vs random_search 18    0.499       0.197       15       0.000
+                         hard (RCT+QFT)  GA vs best_default 18    0.499       0.483       10       0.734
+                                    all   GA vs grid_search 36    0.615       0.539       18       0.252
+                                    all GA vs random_search 36    0.615       0.534       17       0.196
+                                    all  GA vs best_default 36    0.615       0.549       25       0.046
+all, seeds averaged (distinct circuits)   GA vs grid_search 12    0.615       0.539        7       0.339
+all, seeds averaged (distinct circuits) GA vs random_search 12    0.615       0.534        7       0.233
+all, seeds averaged (distinct circuits)  GA vs best_default 12    0.615       0.549        8       0.110
+
+=== May GA: unique chromosomes per generation (of 40) ===
+ epoch
+0     22.2
+1     23.7
+2     26.1
+3     26.9
+4     27.3
+5     27.8
+6     28.1
+7     28.1
+8     28.7
+9     28.8
+10    16.6
+
+=== May GA: population mean fitness by epoch ===
+ epoch                 0      1      2      3      4      5      6      7      8      9      10
+circuit                                                                                       
+GHZ                0.427  0.453  0.460  0.500  0.489  0.506  0.523  0.570  0.578  0.600  0.612
+QFT                0.340  0.385  0.371  0.406  0.381  0.383  0.410  0.423  0.387  0.393  0.407
+Random Clifford T  0.376  0.371  0.356  0.424  0.405  0.392  0.413  0.399  0.374  0.399  0.395
+W-state            0.650  0.701  0.741  0.763  0.737  0.791  0.766  0.771  0.814  0.818  0.815
+
+=== share of evaluations with fitness exactly 0 (failures) ===
+ method
+GA               0.015
+grid_search      0.009
+random_search    0.031
+
+=== ZNE evals with a scale factor < 1 (invalid, from integer mutation) ===
+                share  fitness_if_invalid  fitness_if_valid
+method                                                    
+GA               0.0                 NaN             0.601
+grid_search      0.0                 NaN             0.407
+random_search    0.0                 NaN             0.257
+
+=== May top-10% enrichment (hard circuits) ===
+           circuit   feature                value  share_all  share_top10
+Random Clifford T technique                  ZNE      0.502        0.384
+Random Clifford T technique                  DDD      0.498        0.616
+Random Clifford T  ddd_rule                   yy      0.343        0.339
+Random Clifford T  ddd_rule                   xx      0.332        0.323
+Random Clifford T  ddd_rule                 xyxy      0.324        0.338
+Random Clifford T   factory                  Exp      0.210        0.208
+Random Clifford T   factory               AdaExp      0.207        0.265
+Random Clifford T   factory                 Poly      0.199        0.210
+Random Clifford T   factory               Linear      0.193        0.214
+Random Clifford T   factory           Richardson      0.192        0.104
+Random Clifford T      fold             fold_all      0.340        0.333
+Random Clifford T      fold          fold_global      0.333        0.353
+Random Clifford T      fold fold_gates_at_random      0.327        0.314
+              QFT technique                  ZNE      0.502        0.387
+              QFT technique                  DDD      0.498        0.613
+              QFT  ddd_rule                   yy      0.347        0.366
+              QFT  ddd_rule                   xx      0.331        0.334
+              QFT  ddd_rule                 xyxy      0.322        0.300
+              QFT   factory                  Exp      0.212        0.211
+              QFT   factory               AdaExp      0.200        0.265
+              QFT   factory               Linear      0.197        0.224
+              QFT   factory                 Poly      0.196        0.177
+              QFT   factory           Richardson      0.195        0.124
+              QFT      fold             fold_all      0.340        0.323
+              QFT      fold          fold_global      0.334        0.320
+              QFT      fold fold_gates_at_random      0.326        0.357
+
+=== May GA winners on hard circuits (search vs re-eval) ===
+           circuit  n_qubits  seed  search_fitness  reeval_fitness                                                                       chromosome_str
+              QFT         7     2           0.932           1.000                                                           [rem(0.05, 0.00), ddd(yy)]
+Random Clifford T         7     1           0.947           0.950                                                           [rem(0.05, 0.05), ddd(xx)]
+              QFT         5     2           1.000           0.913                                                           [rem(0.05, 0.05), ddd(xx)]
+Random Clifford T         5     2           0.941           0.864                                                         [rem(0.04, 0.05), ddd(xyxy)]
+              QFT         7     1           0.968           0.833                                                         [rem(0.05, 0.05), ddd(xyxy)]
+Random Clifford T         5     1           0.857           0.526                                                           [rem(0.07, 0.04), ddd(xx)]
+Random Clifford T         6     2           0.917           0.493                                                           [rem(0.05, 0.00), ddd(xx)]
+              QFT         5     1           0.909           0.457 [rem(0.06, 0.05), zne(PolyFactory([3.0605435  7.50664914 8.85344676], 0), fold_all)]
+Random Clifford T         7     2           0.857           0.447                                                         [rem(0.05, 0.02), ddd(xyxy)]
+              QFT         6     2           0.980           0.432                                                           [rem(0.03, 0.03), ddd(yy)]
+              QFT         6     1           0.937           0.422                      [rem(0.05, 0.05), zne(ExpFactory([1, 2, 3], 0.5), fold_global)]
+              QFT         7     0           0.972           0.358                                                           [rem(0.04, 0.06), ddd(yy)]
+Random Clifford T         7     0           1.000           0.333                                                           [rem(0.07, 0.06), ddd(yy)]
+Random Clifford T         6     0           0.969           0.279                                                           [rem(0.05, 0.05), ddd(xx)]
+              QFT         5     0           0.887           0.251                  [rem(0.07, 0.06), zne(AdaExpFactory(5, 0.5), fold_gates_at_random)]
+Random Clifford T         6     1           0.967           0.239                                                         [rem(0.01, 0.03), ddd(xyxy)]
+              QFT         6     0           0.948           0.145             [rem(0.05, 0.03), zne(AdaExpFactory(13, -0.2404473650371397), fold_all)]
+Random Clifford T         5     0           1.000           0.046                                                           [rem(0.07, 0.06), ddd(yy)]
+
+=== Logistic regression, May all evaluations, y = fitness>0.5 (n=55008, base rate 0.35) ===
+CV AUC (held-out circuit sizes) = 0.720 ± 0.090
+ circ_W-state              0.713
+circ_Random Clifford T   -0.707
+circ_QFT                 -0.703
+rem_p1                   -0.588
+rem_p0                   -0.377
+n_scale                  -0.358
+min_scale                -0.259
+factory_AdaExp           -0.256
+is_ZNE                    0.255
+max_scale                 0.123
+factory_Exp              -0.074
+n_qubits                 -0.072
+factory_Poly              0.027
+factory_Linear            0.021
+fold_all                  0.008
+fold_gates_at_random     -0.007
+ddd_yy                   -0.003
+ddd_xx                   -0.002
+
+=== Mirrored N=10: paired tests on log ratio_raw (multiplier <1 = first method better) ===
+ level             comparison  n  median_multiplier  ci_lo  ci_hi  a_wins  wilcoxon_p  sign_p  perm_p  wilcoxon_p_holm
+ ×0.5             GA vs grid 10              1.814  1.223  2.837       1       0.014   0.021   0.014            0.082
+   ×1             GA vs grid 10              2.112  0.941  7.179       2       0.064   0.109   0.057            0.258
+   ×2             GA vs grid 10              0.758  0.516  2.230       6       0.922   0.754   0.727            1.000
+   ×4             GA vs grid 10              1.279  0.632  3.913       4       0.432   0.754   0.457            1.000
+   ×6             GA vs grid 10              0.531  0.087  0.970       8       0.037   0.109   0.037            0.186
+   ×8             GA vs grid  9              1.147  0.848  4.878       4       0.496   1.000   0.945            1.000
+ ×0.5   GA vs best_singleton 10              1.723  1.115  2.524       2       0.027   0.109   0.031            0.137
+   ×1   GA vs best_singleton 10              1.316  1.111  1.967       0       0.002   0.002   0.002            0.012
+   ×2   GA vs best_singleton 10              0.945  0.411  1.319       6       0.557   0.754   0.514            0.557
+   ×4   GA vs best_singleton 10              1.281  0.786  2.555       3       0.275   0.344   0.285            0.551
+   ×6   GA vs best_singleton 10              0.520  0.177  1.310       6       0.160   0.754   0.086            0.516
+   ×8   GA vs best_singleton  9              1.492  1.061  1.921       1       0.129   0.039   1.000            0.516
+ ×0.5              GA vs ZNE 10              1.702  1.039  2.497       2       0.064   0.109   0.055            0.322
+   ×1              GA vs ZNE 10              1.238  1.040  1.801       1       0.004   0.021   0.004            0.023
+   ×2              GA vs ZNE 10              0.830  0.386  1.274       6       0.432   0.754   0.398            0.863
+   ×4              GA vs ZNE 10              1.126  0.672  2.555       4       0.557   0.754   0.432            0.863
+   ×6              GA vs ZNE 10              0.520  0.177  1.226       6       0.160   0.754   0.086            0.516
+   ×8              GA vs ZNE  9              1.238  1.061  1.598       1       0.129   0.039   1.000            0.516
+ ×0.5 grid vs best_singleton 10              0.756  0.559  1.817       6       0.625   0.754   0.553            1.000
+   ×1 grid vs best_singleton 10              0.860  0.294  1.877       5       0.375   1.000   0.297            1.000
+   ×2 grid vs best_singleton 10              1.131  0.532  1.646       4       1.000   0.754   0.662            1.000
+   ×4 grid vs best_singleton 10              0.995  0.699  1.930       5       0.770   1.000   0.699            1.000
+   ×6 grid vs best_singleton 10              1.417  1.154  1.905       1       0.084   0.021   0.148            0.504
+   ×8 grid vs best_singleton 10              1.277  0.578  1.674       3       0.625   0.344   0.840            1.000
+
+=== Between levels, d = log(GA/grid) ===
+                                test    stat     p
+              Mann-Whitney ×4 vs ×6  78.000 0.038
+              Mann-Whitney ×6 vs ×8  22.000 0.066
+Mann-Whitney ×6 vs all other levels 100.000 0.004
+     Kruskal-Wallis across 6 levels  12.215 0.032
+       Spearman(level, log GA/grid)  -0.300 0.021
+
+=== Signal: is mitigated different from 0? how often ratio<1? ===
+ method level  n  median_noisy  median_mitigated  sd_mitigated  wilcoxon_mitigated_vs_0_p  ratio_below_1  binom_p_vs_half
+   DDD  ×0.5 10         0.018             0.002         0.023                      0.369              3            0.344
+   DDD    ×1 10         0.007            -0.009         0.017                      0.180              5            1.000
+   DDD    ×2 10         0.003            -0.006         0.032                      0.896              5            1.000
+   DDD    ×4 10         0.001            -0.003         0.023                      0.939              3            0.344
+   DDD    ×6 10         0.003            -0.018         0.018                      0.008              3            0.344
+   DDD    ×8 10        -0.010            -0.016         0.033                      0.074              3            0.344
+    GA  ×0.5 10         0.017            -0.463         0.804                      0.049              2            0.109
+    GA    ×1 10        -0.009            -0.256         1.145                      0.020              2            0.109
+    GA    ×2 10         0.009             0.069         0.874                      0.557              6            0.754
+    GA    ×4 10        -0.013             0.004         2.682                      1.000              4            0.754
+    GA    ×6 10         0.012             0.801         0.813                      0.084              6            0.754
+    GA    ×8  9        -0.010            -0.188         2.839                      0.820              2            0.180
+   REM  ×0.5 10         0.018             0.007         0.069                      0.645              6            0.754
+   REM    ×1 10         0.007             0.027         0.075                      0.557              7            0.344
+   REM    ×2 10         0.003             0.000         0.037                      0.777              4            0.754
+   REM    ×4 10         0.001             0.009         0.063                      0.695              5            1.000
+   REM    ×6 10         0.003            -0.004         0.055                      0.869              4            0.754
+   REM    ×8 10        -0.010             0.000         0.074                      0.941              6            0.754
+   ZNE  ×0.5 10         0.018             0.144         0.176                      0.105              6            0.754
+   ZNE    ×1 10         0.007             0.040         0.091                      0.100              7            0.344
+   ZNE    ×2 10         0.003            -0.003         0.140                      0.867              5            1.000
+   ZNE    ×4 10         0.001             0.049         0.181                      0.770              6            0.754
+   ZNE    ×6 10         0.003             0.065         0.118                      0.275              6            0.754
+   ZNE    ×8 10        -0.010             0.020         0.157                      0.846              5            1.000
+  grid  ×0.5 10         0.028             0.313         0.830                      0.432              6            0.754
+  grid    ×1 10        -0.001             0.125         0.826                      1.000              5            1.000
+  grid    ×2 10         0.013            -0.105         0.781                      1.000              5            1.000
+  grid    ×4 10        -0.010             0.061         0.547                      1.000              6            0.754
+  grid    ×6 10        -0.023            -0.380         0.940                      0.375              2            0.109
+  grid    ×8 10        -0.005            -0.247         0.764                      0.492              3            0.344
+
+=== Test-retest (same pipeline re-run 10x) ===
+      method  pipelines  reruns_each    icc  anova_p  median_within_min  median_within_max  share_reruns_below_1
+         GA         12           10 -0.075    0.984              0.702              1.313                 0.517
+grid_search         12           10  0.066    0.081              0.148              2.034                 0.650
+
+=== Mirrored winners: technique / rule counts ===
+ method  technique  ddd_rule
+GA      DDD        xx           1
+                   xyxy         2
+                   yy           2
+        ZNE        NaN         55
+grid    DDD        xx           1
+        ZNE        NaN         59
+
+=== REM p0/p1 of winners ===
+           p0                                               p1                                             
+       count   mean    std   min   25%   50%   75%  max count   mean    std   min    25%   50%   75%   max
+method                                                                                                    
+GA      60.0  0.055  0.017  0.02  0.05  0.05  0.07  0.1  60.0  0.047  0.014  0.00  0.040  0.05  0.05  0.08
+grid    60.0  0.139  0.073  0.01  0.10  0.20  0.20  0.2  60.0  0.140  0.076  0.01  0.088  0.20  0.20  0.20
+
+Spearman max_scale vs |mitigated| (ZNE winners): SignificanceResult(statistic=np.float64(0.24801592310818038), pvalue=np.float64(0.008081413321140804))
+Spearman max_scale vs ratio_raw (ZNE winners): SignificanceResult(statistic=np.float64(0.09007294246262465), pvalue=np.float64(0.34273615819278963))
+
+=== Logistic regression, mirrored winners, y = ratio_raw<1 (n=119, base rate 0.41) ===
+CV AUC = 0.524 ± 0.079
+ factory_Exp             0.707
+is_GA                  -0.549
+factory_Poly           -0.449
+rem_p0                 -0.270
+min_scale              -0.179
+fold_all                0.171
+difficulty             -0.167
+n_scale                -0.137
+factory_Linear          0.065
+rem_p1                 -0.064
+ddd_xx                 -0.058
+fold_gates_at_random   -0.045
+ddd_yy                 -0.044
+max_scale               0.016
+is_ZNE                 -0.014
+factory_AdaExp          0.000
+
+=== ×6 per seed ===
+  seed    GA  grid  best_singleton
+    0 0.248 0.335           1.018
+    1 0.111 1.279           0.899
+    2 1.080 1.447           1.025
+    3 0.139 1.707           0.861
+    4 0.167 2.085           0.944
+    5 1.457 1.502           0.805
+    6 1.766 0.873           0.823
+    7 0.462 1.215           0.961
+    8 0.449 1.464           0.800
+    9 1.307 1.151           0.998
+
+=== GA ×6/×8 best and worst runs ===
+  difficulty  seed  mitigated  ratio_raw                                                                                                         pipeline
+        8.0     2      1.008      0.008                          [rem(0.06, 0.05), zne(RichardsonFactory([3.92164404 5.05244639 7.88965293]), fold_all)]
+        6.0     1      1.111      0.111                         [rem(0.05, 0.06), zne(ExpFactory([6.87599739 7.94681346], 7.812313083556713), fold_all)]
+        6.0     3      0.864      0.139 [rem(0.07, 0.04), zne(RichardsonFactory([1.51222076 2.38450212 6.51464149 6.98948272 7.66037984]), fold_global)]
+        6.0     4      0.836      0.167    [rem(0.07, 0.04), zne(PolyFactory([1.40528984 2.00521871 2.40715454 3.01976424 6.25024657], 3), fold_global)]
+        6.0     5     -0.446      1.457                             [rem(0.02, 0.02), zne(PolyFactory([2.60941688 3.24086019 7.04083074], 2), fold_all)]
+        8.0     8     -0.643      1.684                  [rem(0.05, 0.05), zne(LinearFactory([8.23260857 9.08022386 9.63845066]), fold_gates_at_random)]
+        6.0     6     -0.763      1.766                          [rem(0.04, 0.05), zne(RichardsonFactory([5.09053345 6.38413709 9.2979869 ]), fold_all)]
+        8.0     3      8.237      7.166              [rem(0.04, 0.06), zne(RichardsonFactory([5.61445755 8.80045897 9.4139807 ]), fold_gates_at_random)]

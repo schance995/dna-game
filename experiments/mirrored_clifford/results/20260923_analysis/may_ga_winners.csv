@@ -1,0 +1,37 @@
+circuit,n_qubits,seed,search_fitness,chromosome_str,reeval_fitness,p0,p1,technique,ddd_rule,factory,fold,n_scale,min_scale,max_scale
+GHZ,5,0,0.9833333333333334,"[rem(0.03, 0.06), ddd(xyxy)]",0.575,0.03,0.06,DDD,xyxy,,,,,
+GHZ,5,1,0.9722654149674526,"[rem(0.02, 0.06), zne(ExpFactory([1, 2, 3], 0.5), fold_global)]",0.7506511316197798,0.02,0.06,ZNE,,Exp,fold_global,3.0,1.0,3.0
+GHZ,5,2,0.9642857142857144,"[rem(0.00, 0.05), ddd(xyxy)]",0.5753424657534246,0.0,0.05,DDD,xyxy,,,,,
+GHZ,6,0,0.9868467827941686,"[rem(0.07, 0.06), zne(RichardsonFactory([1, 3, 5]), fold_global)]",0.5945824938437428,0.07,0.06,ZNE,,Richardson,fold_global,3.0,1.0,5.0
+GHZ,6,1,0.9849931787175976,"[rem(0.05, 0.09), zne(RichardsonFactory([1, 3, 5]), fold_gates_at_random)]",0.835450183460344,0.05,0.09,ZNE,,Richardson,fold_gates_at_random,3.0,1.0,5.0
+GHZ,6,2,0.9802847754654992,"[rem(0.05, 0.07), zne(PolyFactory([1, 1.5, 2, 2.5, 3], 2), fold_gates_at_random)]",0.6552114803625381,0.05,0.07,ZNE,,Poly,fold_gates_at_random,5.0,1.0,3.0
+GHZ,7,0,1.0,"[rem(0.03, 0.05), ddd(xx)]",0.6724137931034483,0.03,0.05,DDD,xx,,,,,
+GHZ,7,1,0.9677419354838708,"[rem(0.04, 0.08), ddd(yy)]",0.5494505494505495,0.04,0.08,DDD,yy,,,,,
+GHZ,7,2,0.911764705882353,"[rem(0.03, 0.09), ddd(xx)]",0.3333333333333334,0.03,0.09,DDD,xx,,,,,
+QFT,5,0,0.8869078443027937,"[rem(0.07, 0.06), zne(AdaExpFactory(5, 0.5), fold_gates_at_random)]",0.2507409389206214,0.07,0.06,ZNE,,AdaExp,fold_gates_at_random,,,
+QFT,5,1,0.9090909090909088,"[rem(0.06, 0.05), zne(PolyFactory([3.0605435  7.50664914 8.85344676], 0), fold_all)]",0.4565217391304348,0.06,0.05,ZNE,,Poly,fold_all,3.0,3.0605435,8.85344676
+QFT,5,2,1.0,"[rem(0.05, 0.05), ddd(xx)]",0.9130434782608696,0.05,0.05,DDD,xx,,,,,
+QFT,6,0,0.947527409374225,"[rem(0.05, 0.03), zne(AdaExpFactory(13, -0.2404473650371397), fold_all)]",0.1446382842124376,0.05,0.03,ZNE,,AdaExp,fold_all,,,
+QFT,6,1,0.9371216042463624,"[rem(0.05, 0.05), zne(ExpFactory([1, 2, 3], 0.5), fold_global)]",0.4218131013007904,0.05,0.05,ZNE,,Exp,fold_global,3.0,1.0,3.0
+QFT,6,2,0.98,"[rem(0.03, 0.03), ddd(yy)]",0.4322033898305085,0.03,0.03,DDD,yy,,,,,
+QFT,7,0,0.972222222222222,"[rem(0.04, 0.06), ddd(yy)]",0.3577981651376147,0.04,0.06,DDD,yy,,,,,
+QFT,7,1,0.9677419354838712,"[rem(0.05, 0.05), ddd(xyxy)]",0.8333333333333334,0.05,0.05,DDD,xyxy,,,,,
+QFT,7,2,0.9318181818181818,"[rem(0.05, 0.00), ddd(yy)]",1.0,0.05,0.0,DDD,yy,,,,,
+Random Clifford T,5,0,1.0,"[rem(0.07, 0.06), ddd(yy)]",0.0461538461538461,0.07,0.06,DDD,yy,,,,,
+Random Clifford T,5,1,0.8571428571428572,"[rem(0.07, 0.04), ddd(xx)]",0.5263157894736841,0.07,0.04,DDD,xx,,,,,
+Random Clifford T,5,2,0.9411764705882356,"[rem(0.04, 0.05), ddd(xyxy)]",0.8636363636363636,0.04,0.05,DDD,xyxy,,,,,
+Random Clifford T,6,0,0.96875,"[rem(0.05, 0.05), ddd(xx)]",0.2788461538461538,0.05,0.05,DDD,xx,,,,,
+Random Clifford T,6,1,0.9666666666666666,"[rem(0.01, 0.03), ddd(xyxy)]",0.2391304347826087,0.01,0.03,DDD,xyxy,,,,,
+Random Clifford T,6,2,0.9166666666666669,"[rem(0.05, 0.00), ddd(xx)]",0.4931506849315069,0.05,0.0,DDD,xx,,,,,
+Random Clifford T,7,0,1.0,"[rem(0.07, 0.06), ddd(yy)]",0.3333333333333333,0.07,0.06,DDD,yy,,,,,
+Random Clifford T,7,1,0.9473684210526316,"[rem(0.05, 0.05), ddd(xx)]",0.9499999999999998,0.05,0.05,DDD,xx,,,,,
+Random Clifford T,7,2,0.8571428571428572,"[rem(0.05, 0.02), ddd(xyxy)]",0.4473684210526316,0.05,0.02,DDD,xyxy,,,,,
+W-state,5,0,0.996828273674672,"[rem(0.05, 0.06), zne(RichardsonFactory([1, 3, 5]), fold_all)]",0.6804189146302762,0.05,0.06,ZNE,,Richardson,fold_all,3.0,1.0,5.0
+W-state,5,1,1.0,"[rem(0.09, 0.04), ddd(xyxy)]",1.0,0.09,0.04,DDD,xyxy,,,,,
+W-state,5,2,0.9875666074600358,"[rem(0.06, 0.06), zne(LinearFactory([1, 3]), fold_global)]",0.8685524126455904,0.06,0.06,ZNE,,Linear,fold_global,2.0,1.0,3.0
+W-state,6,0,0.9931127364404024,"[rem(0.09, 0.04), zne(AdaExpFactory(12, 6.860263266720194), fold_global)]",0.9123697640458298,0.09,0.04,ZNE,,AdaExp,fold_global,,,
+W-state,6,1,0.9971098265895958,"[rem(0.06, 0.05), zne(LinearFactory([1, 3]), fold_global)]",0.822055137844612,0.06,0.05,ZNE,,Linear,fold_global,2.0,1.0,3.0
+W-state,6,2,0.9999999999999996,"[rem(0.05, 0.04), zne(LinearFactory([1, 3]), fold_all)]",0.8882978723404248,0.05,0.04,ZNE,,Linear,fold_all,2.0,1.0,3.0
+W-state,7,0,0.9964053313368492,"[rem(0.09, 0.04), zne(AdaExpFactory(9, -9.727813779045885), fold_global)]",0.9039280883722616,0.09,0.04,ZNE,,AdaExp,fold_global,,,
+W-state,7,1,0.9862311879602932,"[rem(0.05, 0.05), zne(RichardsonFactory([1, 3, 5]), fold_global)]",0.917748917748916,0.05,0.05,ZNE,,Richardson,fold_global,3.0,1.0,5.0
+W-state,7,2,0.9931573802541556,"[rem(0.07, 0.05), zne(RichardsonFactory([1, 3, 5]), fold_global)]",0.631625637613663,0.07,0.05,ZNE,,Richardson,fold_global,3.0,1.0,5.0
