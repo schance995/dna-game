@@ -1,0 +1,4 @@
+seed,difficulty,gates_per_type,circuit_gates,t_ga_s,gens_to_converge,best_fitness,final_best_fitness,ideal,noisy,mitigated_final_best,ratio_raw,best_pipeline
+0,0.5,24,144,5620.32,15,0.96414,0.75835,1.0,-0.018,-0.83523,1.80278,"[rem(0.04, 0.05), zne(RichardsonFactory([2.66279694 3.21040003 7.08424765]), fold_all)]"
+0,1.0,49,294,3141.48,4,0.62209,0.53556,1.0,-0.004,-0.046,1.04183,"[rem(0.05, 0.07), ddd(xx)]"
+0,2.0,98,588,17985.38,16,0.97676,0.7297,1.0,0.008,1.28915,0.29148,"[rem(0.03, 0.04), zne(RichardsonFactory([5.49188888 8.09557478 8.67144715]), fold_all)]"
